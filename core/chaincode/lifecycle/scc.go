@@ -651,6 +651,7 @@ var (
 		"lscc": {},
 		"qscc": {},
 		"vscc": {},
+		"cmscc": {},
 	}
 )
 

@@ -23,6 +23,7 @@ import (
 	"github.com/hyperledger/fabric/protoutil"
 
 	"github.com/pkg/errors"
+	"github.com/hyperledger/fabric-protos-go/msp"
 )
 
 //go:generate counterfeiter -o mock/legacy_ccinfo.go --fake-name LegacyDeployedCCInfoProvider . LegacyDeployedCCInfoProvider
@@ -321,6 +322,32 @@ func (vc *ValidatorCommitter) ValidationInfo(channelID, chaincodeName string, qe
 	})
 	if err != nil {
 		return "", nil, errors.WithMessage(err, "could not get chaincode"), nil
+	}
+
+	if chaincodeName == "cmscc" {
+
+		channelConfig := vc.Resources.ChannelConfigSource.GetStableChannelConfig(channelID)
+		if channelConfig == nil {
+			return "", nil, nil, nil
+		}
+
+		ac, ok := channelConfig.ApplicationConfig()
+		if !ok {
+			return "", nil, nil, nil
+		}
+		orgs := ac.Organizations()
+		mspids := make([]string, 0, len(orgs))
+		for _, org := range orgs {
+			mspids = append(mspids, org.MSPID())
+		}
+
+		b := protoutil.MarshalOrPanic(&cb.ApplicationPolicy{
+			Type: &cb.ApplicationPolicy_SignaturePolicy{
+				SignaturePolicy: policydsl.SignedByNOutOfGivenRole(1, msp.MSPRole_MEMBER, mspids),
+			},
+		})
+
+		return "vscc", b, nil, nil
 	}
 
 	if !exists {

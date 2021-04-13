@@ -100,6 +100,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
+	"github.com/hyperledger/fabric/core/scc/cmscc"
 )
 
 const (
@@ -595,6 +596,7 @@ func serve(args []string) error {
 		"lscc":       {},
 		"qscc":       {},
 		"cscc":       {},
+		"cmscc":      {},
 		"_lifecycle": {},
 	}
 
@@ -645,6 +647,8 @@ func serve(args []string) error {
 		ChannelConfigSource:    peerInstance,
 		ACLProvider:            aclProvider,
 	}
+
+	cm := cmscc.New()
 
 	chaincodeLauncher := &chaincode.RuntimeLauncher{
 		Metrics:           chaincode.NewLaunchMetrics(opsSystem.Provider),
@@ -748,7 +752,7 @@ func serve(args []string) error {
 	}
 
 	// deploy system chaincodes
-	for _, cc := range []scc.SelfDescribingSysCC{lsccInst, csccInst, qsccInst, lifecycleSCC} {
+	for _, cc := range []scc.SelfDescribingSysCC{lsccInst, csccInst, qsccInst, lifecycleSCC, cm} {
 		if enabled, ok := chaincodeConfig.SCCAllowlist[cc.Name()]; !ok || !enabled {
 			logger.Infof("not deploying chaincode %s as it is not enabled", cc.Name())
 			continue
